@@ -10,3 +10,7 @@ build
 ./build/**/*
 dist/**/*
 build/**/*
+.venv/**/*
+./.venv/**/*
+./.venv
+.venv

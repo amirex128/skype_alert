@@ -19,6 +19,12 @@ Before running the application, you need to set up your credentials and configur
     - `my_phone`: Your phone number.
     - `sms_alert`: A boolean value indicating whether to send SMS alerts.
 
+## Installation
+Install Package Requirements:
+```bash
+pip install -r requirements.txt
+```
+
 ## Running the Application
 
 To run the application, use the following command:
