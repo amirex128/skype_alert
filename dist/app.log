@@ -1,0 +1,10 @@
+pystray._base - ERROR - An error occurred when calling message handler
+Traceback (most recent call last):
+  File "pystray\_win32.py", line 412, in _dispatcher
+  File "pystray\_win32.py", line 224, in _on_notify
+  File "pystray\_base.py", line 328, in inner
+  File "pystray\_base.py", line 453, in __call__
+  File "main.py", line 132, in <lambda>
+  File "main.py", line 148, in exit_action
+  File "main.py", line 43, in onEvent
+SystemExit
