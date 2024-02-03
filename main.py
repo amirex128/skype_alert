@@ -42,7 +42,8 @@ class MySkype(SkypeEventLoop):
     def onEvent(self, event):
         if is_stop:
             print('Skype event loop stopped')
-            sys.exit()
+            os._exit(0)
+            return
 
         try:
             if isinstance(event, SkypeCallEvent):
@@ -271,12 +272,12 @@ def start_skype_thread(sk_event):
 
 
 def exit_action(icon, item, sk_event):
-    icon.stop()
     global is_stop
     is_stop = True
     sk_event.onEvent(SkypeCallEvent())
     print('Exit application')
-    sys.exit()
+    icon.stop()
+    os._exit(0)
 
 
 def setup_icon(icon):
