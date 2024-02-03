@@ -249,6 +249,14 @@ def set_configs(config):
     sobala_user = config['sobala_user']
     call_name_list = config['call_name_list']
     users_must_be_in_call = config['users_must_be_in_call']
+
+    print('word that must be in call:')
+    for word in call_name_list:
+        print('- ' + word)
+
+    print('user that must be in call:')
+    for name, user_id in users_must_be_in_call.items():
+        print(f'- {name}: {user_id}')
     print('Configs set')
 
 
