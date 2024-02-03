@@ -95,19 +95,6 @@ class MySkype(SkypeEventLoop):
             pygame.mixer.music.stop()
 
 
-def check_string_existence(target_string, string_list):
-    return any(s in target_string for s in string_list)
-
-
-def resource_path(relative_path):
-    try:
-        base_path = sys._MEIPASS
-    except Exception:
-        base_path = os.path.abspath(".")
-
-    return os.path.join(base_path, relative_path)
-
-
 def start():
     try:
         credentials_path = resource_path('credentials.txt')
@@ -218,25 +205,37 @@ def start():
 
 
 def start_skype(config, skEvent):
-    config_path = resource_path('config.json')
-    with open(config_path, 'w', encoding='utf-8') as file:
-        json.dump(config, file, ensure_ascii=False, indent=4)
-    global my_name, devops_user, sobala_user, call_name_list, users_must_be_in_call
-    my_name = config['my_name']
-    devops_user = config['devops_user']
-    sobala_user = config['sobala_user']
-    call_name_list = config['call_name_list']
-    users_must_be_in_call = config['users_must_be_in_call']
+    try:
+        config_path = resource_path('config.json')
+        with open(config_path, 'w', encoding='utf-8') as file:
+            json.dump(config, file, ensure_ascii=False, indent=4)
+        global my_name, devops_user, sobala_user, call_name_list, users_must_be_in_call
+        my_name = config['my_name']
+        devops_user = config['devops_user']
+        sobala_user = config['sobala_user']
+        call_name_list = config['call_name_list']
+        users_must_be_in_call = config['users_must_be_in_call']
 
-    pygame.mixer.init()
-    snapp_path = resource_path('snapp.mp3')
-    pygame.mixer.music.load(snapp_path)
-    logo_path = resource_path('logo.png')
-    image = Image.open(logo_path)
-    menu = (pystray.MenuItem('Exit', lambda icon, item: exit_action(icon, item, skEvent)),)
-    icon = pystray.Icon("name", image, "My System Tray Icon", menu)
-    threading.Thread(target=skEvent.loop).start()
-    icon.run(setup)
+        pygame.mixer.init()
+        snapp_path = resource_path('snapp.mp3')
+        pygame.mixer.music.load(snapp_path)
+        logo_path = resource_path('logo.png')
+        image = Image.open(logo_path)
+        menu = (pystray.MenuItem('Exit', lambda icon, item: exit_action(icon, item, skEvent)),)
+        icon = pystray.Icon("name", image, "My System Tray Icon", menu)
+        threading.Thread(target=start_skype_thread, args=(skEvent,)).start()
+        icon.run(setup_icon)
+    except Exception as e:
+        logging.error("Exception occurred", exc_info=True)
+        start_skype(config, skEvent)
+
+
+def start_skype_thread(skEvent):
+    try:
+        skEvent.loop()
+    except Exception as e:
+        logging.error("Exception occurred", exc_info=True)
+        start_skype_thread(skEvent)
 
 
 def exit_action(icon, item, skEvent):
@@ -247,8 +246,21 @@ def exit_action(icon, item, skEvent):
     sys.exit()
 
 
-def setup(icon):
+def setup_icon(icon):
     icon.visible = True
+
+
+def check_string_existence(target_string, string_list):
+    return any(s in target_string for s in string_list)
+
+
+def resource_path(relative_path):
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
 
 
 if __name__ == '__main__':
