@@ -41,6 +41,7 @@ class MySkype(SkypeEventLoop):
 
     def onEvent(self, event):
         if is_stop:
+            print('Skype event loop stopped')
             sys.exit()
 
         try:
@@ -274,6 +275,7 @@ def exit_action(icon, item, sk_event):
     global is_stop
     is_stop = True
     sk_event.onEvent(SkypeCallEvent())
+    print('Exit application')
     sys.exit()
 
 
