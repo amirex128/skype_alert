@@ -46,6 +46,10 @@ class MySkype(SkypeEventLoop):
                 if event.msg.userId == devops_user:
                     self.show_message('گروه دو آپس کال شده است')
 
+            if isinstance(event, SkypeCallEvent):
+                if event.msg.userId == sobala_user:
+                    self.show_message('گروه سوبالا کال شده است')
+
             if isinstance(event, SkypeMessageEvent):
                 if hasattr(event.msg, 'plain'):
                     if my_name in event.msg.plain:
