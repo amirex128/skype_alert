@@ -17,6 +17,7 @@ logging.basicConfig(filename='app.log', filemode='w', format='%(name)s - %(level
                     level=logging.ERROR)
 kavenegar_api = KavenegarAPI('')
 kavenegarParams = {}
+sms_alert = False
 
 my_name = ''
 massoud_user = ''
@@ -80,7 +81,7 @@ class MySkype(SkypeEventLoop):
                 return
             last_show_message_time = datetime.datetime.now()
 
-        if platform.system() == 'Linux' and sound:
+        if platform.system() == 'Linux' and sound and sms_alert:
             kavenegar_api.sms_send(kavenegarParams)
         else:
             if sound:
@@ -95,9 +96,7 @@ def check_string_existence(target_string, string_list):
 
 
 def resource_path(relative_path):
-    """ Get absolute path to resource, works for dev and for PyInstaller """
     try:
-        # PyInstaller creates a temp folder and stores path in _MEIPASS
         base_path = sys._MEIPASS
     except Exception:
         base_path = os.path.abspath(".")
@@ -115,13 +114,14 @@ def start():
         with open(config_path, 'r') as f:
             config = json.load(f)
 
-        global my_name, massoud_user, devops_user, sobala_user, call_name_list,kavenegarParams
+        global my_name, massoud_user, devops_user, sobala_user, call_name_list, kavenegarParams,sms_alert
         my_name = config['my_name']
         massoud_user = config['massoud_user']
         devops_user = config['devops_user']
         sobala_user = config['sobala_user']
         call_name_list = config['call_name_list']
         my_phone = config['my_phone']
+        sms_alert = config['sms_alert'] == 'true'
 
         global kavenegar_api
         with open(credentials_path, 'r') as f:
