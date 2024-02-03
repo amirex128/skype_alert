@@ -23,6 +23,9 @@ devops_user = ''
 sobala_user = ''
 contacts = {}
 
+kavenegar_api = KavenegarAPI('')
+sender = ''
+
 call_name_list = []
 
 last_show_message_time = datetime.datetime.now() - datetime.timedelta(seconds=240)
@@ -42,11 +45,11 @@ class MySkype(SkypeEventLoop):
 
         try:
             if isinstance(event, SkypeCallEvent):
-                if event.msg.userId == devops_user:
+                if event.msg.userId in devops_user:
                     self.show_message('گروه دو آپس کال شده است')
 
             if isinstance(event, SkypeCallEvent):
-                if event.msg.userId == sobala_user:
+                if event.msg.userId in sobala_user:
                     self.show_message('گروه سوبالا کال شده است')
 
             if isinstance(event, SkypeMessageEvent):
@@ -55,16 +58,16 @@ class MySkype(SkypeEventLoop):
                         self.show_message('شما صدا زده شده اید')
 
                     for name, user_id in users_must_be_in_call.items():
-                        if event.msg.userId == user_id:
+                        if event.msg.userId in user_id:
                             self.show_message(f'{name} پیام داده است', private=True, sound=False)
 
-                    if event.msg.userId == devops_user:
+                    if event.msg.userId in devops_user:
                         if '@Masood' in event.msg.plain:
                             self.show_message('مسعود داخل گروه دو آپس صدا زده شده است')
                         if check_string_existence(event.msg.plain, call_name_list):
                             self.show_message('در مورد شما در گروه دو آپس صحبت شده است', sound=False)
 
-                    if event.msg.userId == sobala_user:
+                    if event.msg.userId in sobala_user:
                         if check_string_existence(event.msg.plain, call_name_list):
                             self.show_message('در مورد شما در گروه سوبالا صحبت شده است', sound=False)
 
@@ -110,7 +113,7 @@ def start():
         credentials_path = resource_path('credentials.txt')
         token_path = resource_path('token.txt')
 
-        global kavenegar_api
+        global kavenegar_api, sender
         with open(credentials_path, 'r') as f:
             kavenegar_api = KavenegarAPI(f.readline().strip())
             sender = f.readline().strip()
@@ -181,13 +184,13 @@ def start():
                     config['users_must_be_in_call'].update({name: user_id})
 
                 root.destroy()
-                start_skype(config, sender, skEvent)
+                start_skype(config, skEvent)
 
             button = tk.Button(top, text="Save", command=on_button_click)
             button.pack()
             root.mainloop()
 
-        start_skype(config, sender, skEvent)
+        start_skype(config, skEvent)
 
 
     except Exception as e:
@@ -195,10 +198,10 @@ def start():
         start()
 
 
-def start_skype(config, sender, skEvent):
+def start_skype(config, skEvent):
     config_path = resource_path('config.json')
-    with open(config_path, 'w') as file:
-        json.dump(config, file, indent=4)
+    with open(config_path, 'w', encoding='utf-8') as file:
+        json.dump(config, file, ensure_ascii=False, indent=4)
     global my_name, devops_user, sobala_user, call_name_list, users_must_be_in_call
     my_name = config['my_name']
     devops_user = config['devops_user']
