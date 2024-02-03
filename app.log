@@ -1,6 +1,0 @@
-pystray._base - ERROR - An error occurred in the main loop
-Traceback (most recent call last):
-  File "D:\programming\Projects\self\skype_alert\.venv\Lib\site-packages\pystray\_win32.py", line 147, in _mainloop
-    r = win32.GetMessage(lpmsg, None, 0, 0)
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-KeyboardInterrupt

@@ -3,7 +3,6 @@ from skpy import Skype, SkypeAuthException, SkypeEventLoop, SkypeMessageEvent, S
 import pygame
 import ctypes
 from kavenegar import *
-import platform
 import pystray
 from PIL import Image
 import threading
@@ -14,6 +13,7 @@ from art import *
 import json
 import tkinter as tk
 from tkinter import simpledialog, messagebox
+import random
 
 logging.basicConfig(filename='app.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s',
                     level=logging.ERROR)
@@ -136,11 +136,30 @@ def start():
         sk.contacts.skype.contacts.sync()
         contacts_sync = sk.contacts.skype.contacts.cache
 
+        # Initialize the sorted_contacts dictionary
+        sorted_contacts = {}
+
+        # Loop over the contacts
         for value in contacts_sync.items():
             try:
-                contacts[value[1].name.first + ' ' + value[1].name.last] = value[0]
+                # Generate a key
+                key = value[1].name.first + ' ' + value[1].name.last
+
+                # Check if the key already exists in the dictionary
+                while key in sorted_contacts:
+                    # If the key exists, append a random integer to the end of the key
+                    key += ' ' + str(random.randint(1, 100))
+
+                # Add the entry to the dictionary
+                sorted_contacts[key] = value[1].id
             except:
                 pass
+
+        # Sort the keys of the dictionary
+        sorted_keys = sorted(sorted_contacts.keys())
+
+        # Create a new dictionary with sorted keys
+        contacts = {key: sorted_contacts[key] for key in sorted_keys}
 
         config_path = resource_path('config.json')
 
