@@ -11,27 +11,19 @@ import logging
 import sys
 import os
 from art import *
+import json
 
 logging.basicConfig(filename='app.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s',
                     level=logging.ERROR)
-kavenegar_api = ''
-params = {'sender': '2000500666', 'receptor': '09024809750', 'message': 'از اسنپ فود پیام دارید'}
+kavenegar_api = KavenegarAPI('')
+kavenegarParams = {}
 
-my_name = '@Amir Shirdel - Search & Discovery'
-massoud_user = '8:live:.cid.1f14d85cc112d076'
-devops_user = '19:84854ad599cb4fa987f46dc4103a7636@thread.skype'
-sobala_user = '19:a12cbe66dd104756b641dcafb86c774f@thread.skype'
+my_name = ''
+massoud_user = ''
+devops_user = ''
+sobala_user = ''
 
-amir_list = [
-    'امیر',
-    'امیرشیردل',
-    'امیر شیردل',
-    'امیرشیردلی',
-    'امیر شیردلی',
-    'amir',
-    'amir shirdel',
-    'amir shirdeli',
-]
+call_name_list = []
 
 last_show_message_time = datetime.datetime.now() - datetime.timedelta(seconds=240)
 last_show_private_message_time = datetime.datetime.now() - datetime.timedelta(seconds=240)
@@ -64,11 +56,11 @@ class MySkype(SkypeEventLoop):
                     if event.msg.userId == devops_user:
                         if '@Masood' in event.msg.plain:
                             self.show_message('مسعود داخل گروه دو آپس صدا زده شده است')
-                        if check_string_existence(event.msg.plain, amir_list):
+                        if check_string_existence(event.msg.plain, call_name_list):
                             self.show_message('در مورد شما در گروه دو آپس صحبت شده است', sound=False)
 
                     if event.msg.userId == sobala_user:
-                        if check_string_existence(event.msg.plain, amir_list):
+                        if check_string_existence(event.msg.plain, call_name_list):
                             self.show_message('در مورد شما در گروه سوبالا صحبت شده است', sound=False)
 
         except Exception as e:
@@ -89,7 +81,7 @@ class MySkype(SkypeEventLoop):
             last_show_message_time = datetime.datetime.now()
 
         if platform.system() == 'Linux' and sound:
-            api.sms_send(params)
+            kavenegar_api.sms_send(kavenegarParams)
         else:
             if sound:
                 pygame.mixer.music.play()
@@ -119,11 +111,30 @@ def start():
         token_path = resource_path('token.txt')
         snapp_path = resource_path('snapp.mp3')
         logo_path = resource_path('logo.png')
+        config_path = resource_path('config.json')
+        with open(config_path, 'r') as f:
+            config = json.load(f)
+
+        global my_name, massoud_user, devops_user, sobala_user, call_name_list,kavenegarParams
+        my_name = config['my_name']
+        massoud_user = config['massoud_user']
+        devops_user = config['devops_user']
+        sobala_user = config['sobala_user']
+        call_name_list = config['call_name_list']
+        my_phone = config['my_phone']
+
         global kavenegar_api
         with open(credentials_path, 'r') as f:
             username = f.readline().strip()
             password = f.readline().strip()
             kavenegar_api = KavenegarAPI(f.readline().strip())
+            sender = f.readline().strip()
+
+        kavenegarParams = {
+            'receptor': my_phone,
+            'message': 'از اسنپ فود پیام دارید',
+            'sender': sender
+        }
 
         sk = Skype(connect=False)
         sk.conn.setTokenFile(token_path)
