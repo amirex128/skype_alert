@@ -1,18 +1,16 @@
 {
-  "my_name": "@Amir Shirdel - Search & Discovery",
-  "massoud_user": "8:live:.cid.1f14d85cc112d076",
-  "devops_user": "19:84854ad599cb4fa987f46dc4103a7636@thread.skype",
-  "sobala_user": "19:a12cbe66dd104756b641dcafb86c774f@thread.skype",
-  "my_phone": "09024809750",
-  "sms_alert": "false",
-  "call_name_list": [
-    "امیر",
-    "امیرشیردل",
-    "امیر شیردل",
-    "امیرشیردلی",
-    "امیر شیردلی",
-    "amir",
-    "amir shirdel",
-    "amir shirdeli"
-  ]
+    "my_name": "d",
+    "users_must_be_in_call": {
+        "Iman Ilbag": "iman3999",
+        "Nima Ghoroubi - VendorADs - Backend Developer": "sarjaloo",
+        "reza qorbani": "live:.cid.fe616b10d5fc0fce",
+        "Sadegh Mahmoudpour": "live:1b5839f3d25f542a"
+    },
+    "my_phone": "s",
+    "sms_alert": "s",
+    "call_name_list": [
+        "s"
+    ],
+    "devops_user": "19:84854ad599cb4fa987f46dc4103a7636@thread.skype",
+    "sobala_user": "19:a12cbe66dd104756b641dcafb86c774f@thread.skype"
 }

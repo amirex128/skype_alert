@@ -12,6 +12,8 @@ import sys
 import os
 from art import *
 import json
+import tkinter as tk
+from tkinter import simpledialog, messagebox
 
 logging.basicConfig(filename='app.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s',
                     level=logging.ERROR)
@@ -20,9 +22,10 @@ kavenegarParams = {}
 sms_alert = False
 
 my_name = ''
-massoud_user = ''
+users_must_be_in_call = {}
 devops_user = ''
 sobala_user = ''
+contacts = {}
 
 call_name_list = []
 
@@ -55,8 +58,9 @@ class MySkype(SkypeEventLoop):
                     if my_name in event.msg.plain:
                         self.show_message('شما صدا زده شده اید')
 
-                    if event.msg.userId == massoud_user:
-                        self.show_message('مسعود پیام داده است', private=True)
+                    for name, user_id in users_must_be_in_call.items():
+                        if event.msg.userId == user_id:
+                            self.show_message(f'{name} پیام داده است', private=True, sound=False)
 
                     if event.msg.userId == devops_user:
                         if '@Masood' in event.msg.plain:
@@ -115,17 +119,6 @@ def start():
         snapp_path = resource_path('snapp.mp3')
         logo_path = resource_path('logo.png')
         config_path = resource_path('config.json')
-        with open(config_path, 'r') as f:
-            config = json.load(f)
-
-        global my_name, massoud_user, devops_user, sobala_user, call_name_list, kavenegarParams,sms_alert
-        my_name = config['my_name']
-        massoud_user = config['massoud_user']
-        devops_user = config['devops_user']
-        sobala_user = config['sobala_user']
-        call_name_list = config['call_name_list']
-        my_phone = config['my_phone']
-        sms_alert = config['sms_alert'] == 'true'
 
         global kavenegar_api
         with open(credentials_path, 'r') as f:
@@ -133,12 +126,6 @@ def start():
             password = f.readline().strip()
             kavenegar_api = KavenegarAPI(f.readline().strip())
             sender = f.readline().strip()
-
-        kavenegarParams = {
-            'receptor': my_phone,
-            'message': 'از اسنپ فود پیام دارید',
-            'sender': sender
-        }
 
         sk = Skype(connect=False)
         sk.conn.setTokenFile(token_path)
@@ -150,20 +137,105 @@ def start():
 
         skEvent = MySkype(tokenFile=token_path, autoAck=True)
 
-        pygame.mixer.init()
-        pygame.mixer.music.load(snapp_path)
+        sk.contacts.skype.contacts.sync()
+        contacts_sync = sk.contacts.skype.contacts.cache
 
-        image = Image.open(logo_path)
-        menu = (pystray.MenuItem('Exit', lambda icon, item: exit_action(icon, item, skEvent)),)
-        icon = pystray.Icon("name", image, "My System Tray Icon", menu)
+        for value in contacts_sync.items():
+            try:
+                contacts[value[1].name.first + ' ' + value[1].name.last] = value[0]
+            except:
+                pass
 
-        threading.Thread(target=skEvent.loop).start()
+        with open('config.json', 'r') as file:
+            config = json.load(file)
 
-        icon.run(setup)
+        # List of keys to check and update
+        keys = ['my_name', 'my_phone', 'sms_alert', 'call_name_list']
+
+        # Create a tkinter root widget
+        root = tk.Tk()
+        root.withdraw()  # Hide the main window
+        rewrite = messagebox.askyesno(title="Configuration", message="Do you want to rewrite the config.json file?")
+
+        # Iterate over the keys
+        for key in keys:
+            # If the user wants to rewrite the file or the key's value is empty
+            if rewrite or not config[key]:
+                # Special case for call_name_list
+                if key == 'call_name_list':
+                    # Ask the user for a comma-separated list of names
+                    user_input = simpledialog.askstring(title="Configuration",
+                                                        prompt="Enter a list of names, separated by commas:")
+
+                    # If the user provided input, split it on commas and strip whitespace to get a list of names
+                    if user_input:
+                        config[key] = [name.strip() for name in user_input.split(',')]
+                else:
+                    # Ask the user for input
+                    user_input = simpledialog.askstring(title="Configuration", prompt=f"Enter {key}:")
+
+                    # If the user provided input, update the config
+                    if user_input:
+                        config[key] = user_input
+                        # Create a new top-level window
+
+        top = tk.Toplevel(root)
+        # Create a Listbox widget with MULTIPLE selection mode
+        listbox = tk.Listbox(top, selectmode=tk.MULTIPLE)
+        # Populate the Listbox with the names of the contacts
+        for name in contacts.keys():
+            listbox.insert(tk.END, name)
+        listbox.pack()
+
+        # Function to handle button click
+        def on_button_click():
+            # Get the selected contacts
+            selected_contacts = listbox.curselection()
+            config['users_must_be_in_call'] = {}
+            # Find their corresponding IDs and save them to users_must_be_in_call
+            for i in selected_contacts:
+                name = listbox.get(i)
+                user_id = contacts[name]
+                config['users_must_be_in_call'].update({name: user_id})
+
+            with open('config.json', 'w') as file:
+                json.dump(config, file, indent=4)
+            root.destroy()
+            start_skype(config, logo_path, sender, skEvent, snapp_path)
+
+        # Create a button that saves the selected contacts when clicked
+        button = tk.Button(top, text="Save", command=on_button_click)
+        button.pack()
+
+        root.mainloop()
+
 
     except Exception as e:
         logging.error("Exception occurred", exc_info=True)
         start()
+
+
+def start_skype(config, logo_path, sender, skEvent, snapp_path):
+    global my_name, devops_user, sobala_user, call_name_list, kavenegarParams, sms_alert, users_must_be_in_call
+    my_name = config['my_name']
+    my_phone = config['my_phone']
+    devops_user = config['devops_user']
+    sobala_user = config['sobala_user']
+    call_name_list = config['call_name_list']
+    users_must_be_in_call = config['users_must_be_in_call']
+    sms_alert = config['sms_alert'] == 'true'
+    kavenegarParams = {
+        'receptor': my_phone,
+        'message': 'از اسنپ فود پیام دارید',
+        'sender': sender
+    }
+    pygame.mixer.init()
+    pygame.mixer.music.load(snapp_path)
+    image = Image.open(logo_path)
+    menu = (pystray.MenuItem('Exit', lambda icon, item: exit_action(icon, item, skEvent)),)
+    icon = pystray.Icon("name", image, "My System Tray Icon", menu)
+    threading.Thread(target=skEvent.loop).start()
+    icon.run(setup)
 
 
 def exit_action(icon, item, skEvent):
