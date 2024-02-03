@@ -14,8 +14,7 @@ from art import *
 
 logging.basicConfig(filename='app.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s',
                     level=logging.ERROR)
-
-api = KavenegarAPI('4B706C6344507A34357361326F3344536D624B7038364D3763657237464744797A696B4F794E372F76576F3D')
+kavenegar_api = ''
 params = {'sender': '2000500666', 'receptor': '09024809750', 'message': 'از اسنپ فود پیام دارید'}
 
 my_name = '@Amir Shirdel - Search & Discovery'
@@ -120,10 +119,11 @@ def start():
         token_path = resource_path('token.txt')
         snapp_path = resource_path('snapp.mp3')
         logo_path = resource_path('logo.png')
-
+        global kavenegar_api
         with open(credentials_path, 'r') as f:
             username = f.readline().strip()
             password = f.readline().strip()
+            kavenegar_api = KavenegarAPI(f.readline().strip())
 
         sk = Skype(connect=False)
         sk.conn.setTokenFile(token_path)

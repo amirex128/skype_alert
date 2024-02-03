@@ -2,3 +2,11 @@ credentials.txt
 ./credentials.txt
 token.txt
 ./token.txt
+./dist
+./build
+dist
+build
+./dist/**/*
+./build/**/*
+dist/**/*
+build/**/*
