@@ -17,10 +17,6 @@ from tkinter import simpledialog, messagebox
 
 logging.basicConfig(filename='app.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s',
                     level=logging.ERROR)
-kavenegar_api = KavenegarAPI('')
-kavenegarParams = {}
-sms_alert = False
-
 my_name = ''
 users_must_be_in_call = {}
 devops_user = ''
@@ -89,14 +85,11 @@ class MySkype(SkypeEventLoop):
                 return
             last_show_message_time = datetime.datetime.now()
 
-        if platform.system() == 'Linux' and sound and sms_alert:
-            kavenegar_api.sms_send(kavenegarParams)
-        else:
-            if sound:
-                pygame.mixer.music.play()
-            ctypes.windll.user32.MessageBoxW(0, message, "SnappFood Alert", 1)
-            if sound:
-                pygame.mixer.music.stop()
+        if sound:
+            pygame.mixer.music.play()
+        ctypes.windll.user32.MessageBoxW(0, message, "SnappFood Alert", 1)
+        if sound:
+            pygame.mixer.music.stop()
 
 
 def check_string_existence(target_string, string_list):
@@ -119,8 +112,6 @@ def start():
 
         global kavenegar_api
         with open(credentials_path, 'r') as f:
-            username = f.readline().strip()
-            password = f.readline().strip()
             kavenegar_api = KavenegarAPI(f.readline().strip())
             sender = f.readline().strip()
 
@@ -129,8 +120,13 @@ def start():
         try:
             sk.conn.readToken()
         except SkypeAuthException:
+            root = tk.Tk()
+            root.withdraw()
+            username = simpledialog.askstring(title="Authentication", prompt="Enter your Skype username:")
+            password = simpledialog.askstring(title="Authentication", prompt="Enter your Skype password:", show='*')
             sk.conn.setUserPwd(username, password)
             sk.conn.getSkypeToken()
+            root.destroy()
 
         skEvent = MySkype(tokenFile=token_path, autoAck=True)
 
@@ -143,68 +139,50 @@ def start():
             except:
                 pass
 
-        with open('config.json', 'r') as file:
+        config_path = resource_path('config.json')
+
+        with open(config_path, 'r') as file:
             config = json.load(file)
 
         config['my_name'] = '@' + sk.skype.user.name.first + ' ' + sk.skype.user.name.last
-        # List of keys to check and update
-        keys = ['my_phone', 'sms_alert', 'call_name_list']
+        keys = ['call_name_list']
 
-        # Create a tkinter root widget
         root = tk.Tk()
-        root.withdraw()  # Hide the main window
+        root.withdraw()
         rewrite = messagebox.askyesno(title="Configuration", message="Do you want to rewrite the config.json file?")
 
-        # Iterate over the keys
         for key in keys:
-            # If the user wants to rewrite the file or the key's value is empty
             if rewrite or not config[key]:
-                # Special case for call_name_list
                 if key == 'call_name_list':
-                    # Ask the user for a comma-separated list of names
                     user_input = simpledialog.askstring(title="Configuration",
                                                         prompt="Enter a list of names, separated by commas:")
 
-                    # If the user provided input, split it on commas and strip whitespace to get a list of names
                     if user_input:
                         config[key] = [name.strip() for name in user_input.split(',')]
                 else:
-                    # Ask the user for input
                     user_input = simpledialog.askstring(title="Configuration", prompt=f"Enter {key}:")
 
-                    # If the user provided input, update the config
                     if user_input:
                         config[key] = user_input
-                        # Create a new top-level window
 
         if rewrite or not config['users_must_be_in_call']:
             top = tk.Toplevel(root)
-            # Create a Listbox widget with MULTIPLE selection mode
             listbox = tk.Listbox(top, selectmode=tk.MULTIPLE)
-            # Populate the Listbox with the names of the contacts
             for name in contacts.keys():
                 listbox.insert(tk.END, name)
             listbox.pack()
 
-            # Function to handle button click
             def on_button_click():
-                # Get the selected contacts
                 selected_contacts = listbox.curselection()
                 config['users_must_be_in_call'] = {}
-                # Find their corresponding IDs and save them to users_must_be_in_call
                 for i in selected_contacts:
                     name = listbox.get(i)
                     user_id = contacts[name]
                     config['users_must_be_in_call'].update({name: user_id})
 
-                config_path = resource_path('config.json')
-
-                with open(config_path, 'w') as file:
-                    json.dump(config, file, indent=4)
                 root.destroy()
                 start_skype(config, sender, skEvent)
 
-            # Create a button that saves the selected contacts when clicked
             button = tk.Button(top, text="Save", command=on_button_click)
             button.pack()
             root.mainloop()
@@ -218,19 +196,16 @@ def start():
 
 
 def start_skype(config, sender, skEvent):
-    global my_name, devops_user, sobala_user, call_name_list, kavenegarParams, sms_alert, users_must_be_in_call
+    config_path = resource_path('config.json')
+    with open(config_path, 'w') as file:
+        json.dump(config, file, indent=4)
+    global my_name, devops_user, sobala_user, call_name_list, users_must_be_in_call
     my_name = config['my_name']
-    my_phone = config['my_phone']
     devops_user = config['devops_user']
     sobala_user = config['sobala_user']
     call_name_list = config['call_name_list']
     users_must_be_in_call = config['users_must_be_in_call']
-    sms_alert = config['sms_alert'] == 'true'
-    kavenegarParams = {
-        'receptor': my_phone,
-        'message': 'از اسنپ فود پیام دارید',
-        'sender': sender
-    }
+
     pygame.mixer.init()
     snapp_path = resource_path('snapp.mp3')
     pygame.mixer.music.load(snapp_path)
