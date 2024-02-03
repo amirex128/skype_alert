@@ -116,9 +116,6 @@ def start():
     try:
         credentials_path = resource_path('credentials.txt')
         token_path = resource_path('token.txt')
-        snapp_path = resource_path('snapp.mp3')
-        logo_path = resource_path('logo.png')
-        config_path = resource_path('config.json')
 
         global kavenegar_api
         with open(credentials_path, 'r') as f:
@@ -149,8 +146,9 @@ def start():
         with open('config.json', 'r') as file:
             config = json.load(file)
 
+        config['my_name'] = '@' + sk.skype.user.name.first + ' ' + sk.skype.user.name.last
         # List of keys to check and update
-        keys = ['my_name', 'my_phone', 'sms_alert', 'call_name_list']
+        keys = ['my_phone', 'sms_alert', 'call_name_list']
 
         # Create a tkinter root widget
         root = tk.Tk()
@@ -179,35 +177,39 @@ def start():
                         config[key] = user_input
                         # Create a new top-level window
 
-        top = tk.Toplevel(root)
-        # Create a Listbox widget with MULTIPLE selection mode
-        listbox = tk.Listbox(top, selectmode=tk.MULTIPLE)
-        # Populate the Listbox with the names of the contacts
-        for name in contacts.keys():
-            listbox.insert(tk.END, name)
-        listbox.pack()
+        if rewrite or not config['users_must_be_in_call']:
+            top = tk.Toplevel(root)
+            # Create a Listbox widget with MULTIPLE selection mode
+            listbox = tk.Listbox(top, selectmode=tk.MULTIPLE)
+            # Populate the Listbox with the names of the contacts
+            for name in contacts.keys():
+                listbox.insert(tk.END, name)
+            listbox.pack()
 
-        # Function to handle button click
-        def on_button_click():
-            # Get the selected contacts
-            selected_contacts = listbox.curselection()
-            config['users_must_be_in_call'] = {}
-            # Find their corresponding IDs and save them to users_must_be_in_call
-            for i in selected_contacts:
-                name = listbox.get(i)
-                user_id = contacts[name]
-                config['users_must_be_in_call'].update({name: user_id})
+            # Function to handle button click
+            def on_button_click():
+                # Get the selected contacts
+                selected_contacts = listbox.curselection()
+                config['users_must_be_in_call'] = {}
+                # Find their corresponding IDs and save them to users_must_be_in_call
+                for i in selected_contacts:
+                    name = listbox.get(i)
+                    user_id = contacts[name]
+                    config['users_must_be_in_call'].update({name: user_id})
 
-            with open('config.json', 'w') as file:
-                json.dump(config, file, indent=4)
-            root.destroy()
-            start_skype(config, logo_path, sender, skEvent, snapp_path)
+                config_path = resource_path('config.json')
 
-        # Create a button that saves the selected contacts when clicked
-        button = tk.Button(top, text="Save", command=on_button_click)
-        button.pack()
+                with open(config_path, 'w') as file:
+                    json.dump(config, file, indent=4)
+                root.destroy()
+                start_skype(config, sender, skEvent)
 
-        root.mainloop()
+            # Create a button that saves the selected contacts when clicked
+            button = tk.Button(top, text="Save", command=on_button_click)
+            button.pack()
+            root.mainloop()
+
+        start_skype(config, sender, skEvent)
 
 
     except Exception as e:
@@ -215,7 +217,7 @@ def start():
         start()
 
 
-def start_skype(config, logo_path, sender, skEvent, snapp_path):
+def start_skype(config, sender, skEvent):
     global my_name, devops_user, sobala_user, call_name_list, kavenegarParams, sms_alert, users_must_be_in_call
     my_name = config['my_name']
     my_phone = config['my_phone']
@@ -230,7 +232,9 @@ def start_skype(config, logo_path, sender, skEvent, snapp_path):
         'sender': sender
     }
     pygame.mixer.init()
+    snapp_path = resource_path('snapp.mp3')
     pygame.mixer.music.load(snapp_path)
+    logo_path = resource_path('logo.png')
     image = Image.open(logo_path)
     menu = (pystray.MenuItem('Exit', lambda icon, item: exit_action(icon, item, skEvent)),)
     icon = pystray.Icon("name", image, "My System Tray Icon", menu)

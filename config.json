@@ -1,15 +1,16 @@
 {
-    "my_name": "d",
+    "my_name": "@Amir Shirdel - Search & Discovery",
     "users_must_be_in_call": {
         "Iman Ilbag": "iman3999",
-        "Nima Ghoroubi - VendorADs - Backend Developer": "sarjaloo",
-        "reza qorbani": "live:.cid.fe616b10d5fc0fce",
-        "Sadegh Mahmoudpour": "live:1b5839f3d25f542a"
+        "Haleh Ebrahimi": "live:.cid.85582a3c68e0953b",
+        "fatemeh loni": "live:.cid.2665ab125a02df52",
+        "Sadegh Mahmoudpour": "live:1b5839f3d25f542a",
+        "ashkan jahangiri": "ashkan.jahangiri"
     },
-    "my_phone": "s",
-    "sms_alert": "s",
+    "my_phone": "d",
+    "sms_alert": "d",
     "call_name_list": [
-        "s"
+        "d"
     ],
     "devops_user": "19:84854ad599cb4fa987f46dc4103a7636@thread.skype",
     "sobala_user": "19:a12cbe66dd104756b641dcafb86c774f@thread.skype"
