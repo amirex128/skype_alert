@@ -182,6 +182,9 @@ def connect_skype():
     sk = Skype(connect=False)
     sk.conn.setTokenFile(token_path)
     try:
+        relogin = messagebox.askyesno(title="Re-Login", message="Do you want to re-login?")
+        if relogin:
+            raise SkypeAuthException
         sk.conn.readToken()
     except SkypeAuthException:
         root = tk.Tk()
