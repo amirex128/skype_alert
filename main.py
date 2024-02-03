@@ -91,112 +91,24 @@ class MySkype(SkypeEventLoop):
         if sound:
             pygame.mixer.music.play()
         ctypes.windll.user32.MessageBoxW(0, message, "SnappFood Alert", 1)
+        print('send message: ' + message)
         if sound:
             pygame.mixer.music.stop()
 
 
 def start():
     try:
-        credentials_path = resource_path('credentials.txt')
-        token_path = resource_path('token.txt')
+        sk, sk_event = connect_skype()
 
-        global kavenegar_api, sender
-        with open(credentials_path, 'r') as f:
-            kavenegar_api = KavenegarAPI(f.readline().strip())
-            sender = f.readline().strip()
+        get_contacts(sk)
 
-        sk = Skype(connect=False)
-        sk.conn.setTokenFile(token_path)
-        try:
-            sk.conn.readToken()
-        except SkypeAuthException:
-            root = tk.Tk()
-            root.withdraw()
-            username = simpledialog.askstring(title="Authentication", prompt="Enter your Skype username:")
-            password = simpledialog.askstring(title="Authentication", prompt="Enter your Skype password:", show='*')
-            sk.conn.setUserPwd(username, password)
-            sk.conn.getSkypeToken()
-            root.destroy()
+        config = set_username(sk)
 
-        skEvent = MySkype(tokenFile=token_path, autoAck=True)
+        rewrite, root = show_config_input(config)
 
-        sk.contacts.skype.contacts.sync()
-        contacts_sync = sk.contacts.skype.contacts.cache
+        show_contacts_window(config, rewrite, root, sk_event)
 
-        # Initialize the sorted_contacts dictionary
-        sorted_contacts = {}
-
-        # Loop over the contacts
-        for value in contacts_sync.items():
-            try:
-                # Generate a key
-                key = value[1].name.first + ' ' + value[1].name.last
-
-                # Check if the key already exists in the dictionary
-                while key in sorted_contacts:
-                    # If the key exists, append a random integer to the end of the key
-                    key += ' ' + str(random.randint(1, 100))
-
-                # Add the entry to the dictionary
-                sorted_contacts[key] = value[1].id
-            except:
-                pass
-
-        # Sort the keys of the dictionary
-        sorted_keys = sorted(sorted_contacts.keys())
-
-        # Create a new dictionary with sorted keys
-        contacts = {key: sorted_contacts[key] for key in sorted_keys}
-
-        config_path = resource_path('config.json')
-
-        with open(config_path, 'r') as file:
-            config = json.load(file)
-
-        config['my_name'] = '@' + sk.skype.user.name.first + ' ' + sk.skype.user.name.last
-        keys = ['call_name_list']
-
-        root = tk.Tk()
-        root.withdraw()
-        rewrite = messagebox.askyesno(title="Configuration", message="Do you want to rewrite the config.json file?")
-
-        for key in keys:
-            if rewrite or not config[key]:
-                if key == 'call_name_list':
-                    user_input = simpledialog.askstring(title="Configuration",
-                                                        prompt="Enter a list of names, separated by commas:")
-
-                    if user_input:
-                        config[key] = [name.strip() for name in user_input.split(',')]
-                else:
-                    user_input = simpledialog.askstring(title="Configuration", prompt=f"Enter {key}:")
-
-                    if user_input:
-                        config[key] = user_input
-
-        if rewrite or not config['users_must_be_in_call']:
-            top = tk.Toplevel(root)
-            listbox = tk.Listbox(top, selectmode=tk.MULTIPLE)
-            for name in contacts.keys():
-                listbox.insert(tk.END, name)
-            listbox.pack()
-
-            def on_button_click():
-                selected_contacts = listbox.curselection()
-                config['users_must_be_in_call'] = {}
-                for i in selected_contacts:
-                    name = listbox.get(i)
-                    user_id = contacts[name]
-                    config['users_must_be_in_call'].update({name: user_id})
-
-                root.destroy()
-                start_skype(config, skEvent)
-
-            button = tk.Button(top, text="Save", command=on_button_click)
-            button.pack()
-            root.mainloop()
-
-        start_skype(config, skEvent)
+        start_skype(config, sk_event)
 
 
     except Exception as e:
@@ -204,45 +116,153 @@ def start():
         start()
 
 
-def start_skype(config, skEvent):
-    try:
-        config_path = resource_path('config.json')
-        with open(config_path, 'w', encoding='utf-8') as file:
-            json.dump(config, file, ensure_ascii=False, indent=4)
-        global my_name, devops_user, sobala_user, call_name_list, users_must_be_in_call
-        my_name = config['my_name']
-        devops_user = config['devops_user']
-        sobala_user = config['sobala_user']
-        call_name_list = config['call_name_list']
-        users_must_be_in_call = config['users_must_be_in_call']
+def set_username(sk):
+    config_path = resource_path('config.json')
+    with open(config_path, 'r') as file:
+        config = json.load(file)
+    config['my_name'] = '@' + sk.skype.user.name.first + ' ' + sk.skype.user.name.last
+    print('set my name: ' + config['my_name'])
+    return config
 
-        pygame.mixer.init()
-        snapp_path = resource_path('snapp.mp3')
-        pygame.mixer.music.load(snapp_path)
-        logo_path = resource_path('logo.png')
-        image = Image.open(logo_path)
-        menu = (pystray.MenuItem('Exit', lambda icon, item: exit_action(icon, item, skEvent)),)
-        icon = pystray.Icon("name", image, "My System Tray Icon", menu)
-        threading.Thread(target=start_skype_thread, args=(skEvent,)).start()
+
+def show_config_input(config):
+    keys = ['call_name_list']
+    root = tk.Tk()
+    root.withdraw()
+    rewrite = messagebox.askyesno(title="Configuration", message="Do you want to rewrite the config.json file?")
+    for key in keys:
+        if rewrite or not config[key]:
+            if key == 'call_name_list':
+                user_input = simpledialog.askstring(title="Configuration",
+                                                    prompt="Enter a list of names, separated by commas:")
+
+                if user_input:
+                    config[key] = [name.strip() for name in user_input.split(',')]
+            else:
+                user_input = simpledialog.askstring(title="Configuration", prompt=f"Enter {key}:")
+
+                if user_input:
+                    config[key] = user_input
+    print('Configs input is set')
+    return rewrite, root
+
+
+def show_contacts_window(config, rewrite, root, sk_event):
+    if rewrite or not config['users_must_be_in_call']:
+        top = tk.Toplevel(root)
+        listbox = tk.Listbox(top, selectmode=tk.MULTIPLE)
+        for name in contacts.keys():
+            listbox.insert(tk.END, name)
+        listbox.pack()
+
+        def on_button_click():
+            selected_contacts = listbox.curselection()
+            config['users_must_be_in_call'] = {}
+            for i in selected_contacts:
+                name = listbox.get(i)
+                user_id = contacts[name]
+                config['users_must_be_in_call'].update({name: user_id})
+
+            root.destroy()
+            start_skype(config, sk_event)
+            print('Contacts selected')
+
+        button = tk.Button(top, text="Save", command=on_button_click)
+        button.pack()
+        root.mainloop()
+
+
+def connect_skype():
+    credentials_path = resource_path('credentials.txt')
+    token_path = resource_path('token.txt')
+    global kavenegar_api, sender
+    with open(credentials_path, 'r') as f:
+        kavenegar_api = KavenegarAPI(f.readline().strip())
+        sender = f.readline().strip()
+    sk = Skype(connect=False)
+    sk.conn.setTokenFile(token_path)
+    try:
+        sk.conn.readToken()
+    except SkypeAuthException:
+        root = tk.Tk()
+        root.withdraw()
+        username = simpledialog.askstring(title="Authentication", prompt="Enter your Skype username:")
+        password = simpledialog.askstring(title="Authentication", prompt="Enter your Skype password:", show='*')
+        sk.conn.setUserPwd(username, password)
+        sk.conn.getSkypeToken()
+        root.destroy()
+    print('Skype connected')
+    sk_event = MySkype(tokenFile=token_path, autoAck=True)
+    return sk, sk_event
+
+
+def get_contacts(sk):
+    global contacts
+    sk.contacts.skype.contacts.sync()
+    contacts_sync = sk.contacts.skype.contacts.cache
+    sorted_contacts = {}
+    for value in contacts_sync.items():
+        try:
+            key = value[1].name.first + ' ' + value[1].name.last
+            while key in sorted_contacts:
+                key += ' ' + str(random.randint(1, 100))
+            sorted_contacts[key] = value[1].id
+        except:
+            pass
+    sorted_keys = sorted(sorted_contacts.keys())
+    contacts = {key: sorted_contacts[key] for key in sorted_keys}
+    print('Contacts synced')
+
+
+def start_skype(config, sk_event):
+    try:
+        set_configs(config)
+        icon = register_tray(sk_event)
+        threading.Thread(target=start_skype_thread, args=(sk_event,)).start()
         icon.run(setup_icon)
     except Exception as e:
         logging.error("Exception occurred", exc_info=True)
-        start_skype(config, skEvent)
+        start_skype(config, sk_event)
 
 
-def start_skype_thread(skEvent):
+def register_tray(sk_event):
+    pygame.mixer.init()
+    snapp_path = resource_path('snapp.mp3')
+    pygame.mixer.music.load(snapp_path)
+    logo_path = resource_path('logo.png')
+    image = Image.open(logo_path)
+    menu = (pystray.MenuItem('Exit', lambda icon, item: exit_action(icon, item, sk_event)),)
+    icon = pystray.Icon("name", image, "My System Tray Icon", menu)
+    return icon
+
+
+def set_configs(config):
+    config_path = resource_path('config.json')
+    with open(config_path, 'w', encoding='utf-8') as file:
+        json.dump(config, file, ensure_ascii=False, indent=4)
+    global my_name, devops_user, sobala_user, call_name_list, users_must_be_in_call
+    my_name = config['my_name']
+    devops_user = config['devops_user']
+    sobala_user = config['sobala_user']
+    call_name_list = config['call_name_list']
+    users_must_be_in_call = config['users_must_be_in_call']
+    print('Configs set')
+
+
+def start_skype_thread(sk_event):
     try:
-        skEvent.loop()
+        print('Skype thread started')
+        sk_event.loop()
     except Exception as e:
         logging.error("Exception occurred", exc_info=True)
-        start_skype_thread(skEvent)
+        start_skype_thread(sk_event)
 
 
-def exit_action(icon, item, skEvent):
+def exit_action(icon, item, sk_event):
     icon.stop()
     global is_stop
     is_stop = True
-    skEvent.onEvent(SkypeCallEvent())
+    sk_event.onEvent(SkypeCallEvent())
     sys.exit()
 
 
