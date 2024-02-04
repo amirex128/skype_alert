@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     steps:
     - name: Checkout code
@@ -20,9 +20,9 @@ jobs:
 
     - name: Create token.txt, credentials.txt and config.json from sample files
       run: |
-        cp token.txt.sample token.txt
-        cp credentials.txt.sample credentials.txt
-        cp config.json.sample config.json
+        copy token.txt.sample token.txt
+        copy credentials.txt.sample credentials.txt
+        copy config.json.sample config.json
 
     - name: Install dependencies
       run: |
@@ -31,13 +31,6 @@ jobs:
 
     - name: Build application
       run: pyinstaller main.spec
-
-    - name: Install tree
-      run: sudo apt-get install -y tree
-
-    - name: Write log after build
-      run: |
-        tree .
 
     - name: Create Release
       id: create_release
@@ -57,6 +50,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: /home/runner/work/skype_alert/skype_alert/dist/Skype_Alert
+        asset_path: .\dist\Skype_Alert.exe
         asset_name: Skype_Alert.exe
         asset_content_type: application/octet-stream
