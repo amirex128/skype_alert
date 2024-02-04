@@ -247,6 +247,7 @@ def connect_skype():
         root.withdraw()
         username = simpledialog.askstring(title="Authentication", prompt="Enter your Skype username:")
         password = simpledialog.askstring(title="Authentication", prompt="Enter your Skype password:", show='*')
+        print('Connecting to Skype...')
         sk.conn.setUserPwd(username, password)
         sk.conn.getSkypeToken()
         root.destroy()
