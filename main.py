@@ -160,10 +160,11 @@ def start():
 
         config = set_username(sk)
 
-        rewrite, root = show_config_input(config)
+        rewrite = show_config_input(config)
 
-        show_contacts_window(config, rewrite, root, sk_event)
-        show_groups_window(config, rewrite, root, sk_event)
+        show_contacts_window(config, rewrite)
+
+        show_groups_window(config, rewrite)
 
         start_skype(config, sk_event)
 
@@ -184,8 +185,6 @@ def set_username(sk):
 
 def show_config_input(config):
     keys = ['call_name_list']
-    root = tk.Tk()
-    root.withdraw()
     rewrite = messagebox.askyesno(title="Configuration", message="Do you want to rewrite the config.json file?")
     for key in keys:
         if rewrite or not config[key]:
@@ -201,43 +200,46 @@ def show_config_input(config):
                 if user_input:
                     config[key] = user_input
     print('Configs input is set')
-    return rewrite, root
+    return rewrite
 
 
-def show_contacts_window(config, rewrite, root, sk_event):
+def show_contacts_window(config, rewrite):
     if rewrite or not config['users_must_be_in_call']:
+        root = tk.Tk()
+        root.withdraw()
         top = tk.Toplevel(root)
         listbox = tk.Listbox(top, selectmode=tk.MULTIPLE)
         for name in contacts.keys():
             listbox.insert(tk.END, name)
         listbox.pack()
 
-        def on_button_click():
+        def on_button_contacts_click():
             selected_contacts = listbox.curselection()
             config['users_must_be_in_call'] = {}
             for i in selected_contacts:
                 name = listbox.get(i)
                 user_id = contacts[name]
                 config['users_must_be_in_call'].update({name: user_id})
-
+            top.destroy()
             root.destroy()
-            start_skype(config, sk_event)
             print('Contacts selected')
 
-        button = tk.Button(top, text="Save", command=on_button_click)
+        button = tk.Button(top, text="Save", command=on_button_contacts_click)
         button.pack()
         root.mainloop()
 
 
-def show_groups_window(config, rewrite, root, sk_event):
+def show_groups_window(config, rewrite):
     if rewrite or not config['groups_must_be_in_call']:
+        root = tk.Tk()
+        root.withdraw()
         top = tk.Toplevel(root)
         listbox = tk.Listbox(top, selectmode=tk.MULTIPLE)
         for name in groups.keys():
             listbox.insert(tk.END, name)
         listbox.pack()
 
-        def on_button_click():
+        def on_button_groups_click():
             selected_groups = listbox.curselection()
             config['groups_must_be_in_call'] = {}
             for i in selected_groups:
@@ -245,11 +247,11 @@ def show_groups_window(config, rewrite, root, sk_event):
                 user_id = groups[name]
                 config['groups_must_be_in_call'].update({name: user_id})
 
+            top.destroy()
             root.destroy()
-            start_skype(config, sk_event)
             print('Groups selected')
 
-        button = tk.Button(top, text="Save", command=on_button_click)
+        button = tk.Button(top, text="Save", command=on_button_groups_click)
         button.pack()
         root.mainloop()
 
