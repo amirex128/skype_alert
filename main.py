@@ -14,6 +14,7 @@ import json
 import tkinter as tk
 from tkinter import simpledialog, messagebox
 import random
+import time
 
 logging.basicConfig(filename='app.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s',
                     level=logging.ERROR)
@@ -38,6 +39,51 @@ class MySkype(SkypeEventLoop):
     def __init__(self, *args, **kwargs):
         super(MySkype, self).__init__(*args, **kwargs)
         print(text2art("Skype Alert"))
+        self.connection_checker = threading.Thread(target=self.check_connection)
+        self.connection_checker.start()
+        self.stop_event = threading.Event()
+        self.skype_thread = None
+
+    def start_skype_thread(self):
+        try:
+            print('Skype thread started')
+            while not self.stop_event.is_set():
+                self.loop()
+        except Exception as e:
+            logging.error("Exception occurred", exc_info=True)
+            self.start_skype_thread()
+
+    def check_connection(self):
+        while True:
+            print("Checking connection...")
+            try:
+                response = requests.get('https://www.skype.com')
+                response.raise_for_status()  # Raises a HTTPError if the status is 4xx, 5xx
+
+                print("Connection is okay.")
+            except (requests.ConnectionError, requests.HTTPError):
+                print("Connection lost. Reconnecting...")
+                self.conn.readToken()
+                if self.conn.connected:
+                    try:
+                        response = requests.get('https://www.skype.com')
+                        response.raise_for_status()  # Raises a HTTPError if the status is 4xx, 5xx
+
+                        print("Connection is okay.")
+                    except (requests.ConnectionError, requests.HTTPError):
+                        print("Reconnection failed.")
+                        continue
+                    print("Reconnected. Restarting event loop...")
+                    # Stop the old thread
+                    if self.skype_thread is not None:
+                        self.stop_event.set()
+                    # Start a new thread
+                    self.stop_event = threading.Event()
+                    self.skype_thread = threading.Thread(target=self.start_skype_thread)
+                    self.skype_thread.start()
+                else:
+                    print("Reconnection failed.")
+            time.sleep(60)  # wait for 1 minute
 
     def onEvent(self, event):
         if is_stop:
@@ -92,7 +138,7 @@ class MySkype(SkypeEventLoop):
 
         if sound:
             pygame.mixer.music.play()
-        ctypes.windll.user32.MessageBoxW(0, message, "SnappFood Alert", 1)
+        ctypes.windll.user32.MessageBoxW(0, message, "SnappFood Alert", 1 | 16)
         print('send message: ' + message)
         if sound:
             pygame.mixer.music.stop()
