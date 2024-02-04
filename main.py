@@ -114,22 +114,23 @@ class MySkype(SkypeEventLoop):
                         self.show_message('شما صدا زده شده اید')
 
                     for name, user_id in users_must_be_in_call.items():
-                        if event.msg.userId in user_id:
+                        if user_id in event.msg.chatId:
                             self.show_message(f'{name} پیام داده است', private=True, sound=False)
 
-                    if event.msg.userId in devops_user:
+                    if devops_user in event.msg.chatId:
                         if '@Masood' in event.msg.plain:
                             self.show_message('مسعود داخل گروه دو آپس صدا زده شده است')
                         if check_string_existence(event.msg.plain, call_name_list):
                             self.show_message('در مورد شما در گروه دو آپس صحبت شده است', sound=False)
 
-                    if event.msg.userId in sobala_user:
+                    if sobala_user in event.msg.chatId:
                         if check_string_existence(event.msg.plain, call_name_list):
                             self.show_message('در مورد شما در گروه سوبالا صحبت شده است', sound=False)
 
         except Exception as e:
             logging.error("Exception occurred on event", exc_info=True)
 
+    # need get group id for listen call and get group for listen say your name
     def show_message(self, message, *args, **kwargs):
         sound = kwargs.get('sound', True)
         private = kwargs.get('sound', False)
