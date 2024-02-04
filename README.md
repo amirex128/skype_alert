@@ -1,5 +1,3 @@
-# README.md
-
 ## Project Overview
 
 This project is a Python application that interacts with Skype and sends alerts based on certain events. It uses the `skpy` library to interact with Skype, `pygame` for sound, `kavenegar` for sending SMS, and `pystray` for system tray icon functionality.
