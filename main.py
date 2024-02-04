@@ -1,5 +1,5 @@
 import datetime
-from skpy import Skype, SkypeAuthException, SkypeEventLoop, SkypeMessageEvent, SkypeCallEvent
+from skpy import Skype, SkypeAuthException, SkypeGroupChat, SkypeEventLoop, SkypeMessageEvent, SkypeCallEvent
 import pygame
 import ctypes
 from kavenegar import *
@@ -20,9 +20,10 @@ logging.basicConfig(filename='app.log', filemode='w', format='%(name)s - %(level
                     level=logging.ERROR)
 my_name = ''
 users_must_be_in_call = {}
+groups_must_be_in_call = {}
 devops_user = ''
-sobala_user = ''
 contacts = {}
+groups = {}
 
 kavenegar_api = KavenegarAPI('')
 sender = ''
@@ -101,12 +102,9 @@ class MySkype(SkypeEventLoop):
 
         try:
             if isinstance(event, SkypeCallEvent):
-                if event.msg.userId in devops_user:
-                    self.show_message('گروه دو آپس کال شده است')
-
-            if isinstance(event, SkypeCallEvent):
-                if event.msg.userId in sobala_user:
-                    self.show_message('گروه سوبالا کال شده است')
+                for name, user_id in groups_must_be_in_call.items():
+                    if user_id in event.msg.chatId:
+                        self.show_message(f'{name}این گروه کال شده است ')
 
             if isinstance(event, SkypeMessageEvent):
                 if hasattr(event.msg, 'plain'):
@@ -117,15 +115,15 @@ class MySkype(SkypeEventLoop):
                         if user_id in event.msg.chatId:
                             self.show_message(f'{name} پیام داده است', private=True, sound=False)
 
+                    for name, user_id in groups_must_be_in_call.items():
+                        if user_id in event.msg.chatId:
+                            if check_string_existence(event.msg.plain, call_name_list):
+                                self.show_message(f'{name}در مورد شما در این گروه صحبت شده است', sound=False)
+
                     if devops_user in event.msg.chatId:
                         if '@Masood' in event.msg.plain:
                             self.show_message('مسعود داخل گروه دو آپس صدا زده شده است')
-                        if check_string_existence(event.msg.plain, call_name_list):
-                            self.show_message('در مورد شما در گروه دو آپس صحبت شده است', sound=False)
 
-                    if sobala_user in event.msg.chatId:
-                        if check_string_existence(event.msg.plain, call_name_list):
-                            self.show_message('در مورد شما در گروه سوبالا صحبت شده است', sound=False)
 
         except Exception as e:
             logging.error("Exception occurred on event", exc_info=True)
@@ -158,12 +156,14 @@ def start():
         sk, sk_event = connect_skype()
 
         get_contacts(sk)
+        get_groups(sk)
 
         config = set_username(sk)
 
         rewrite, root = show_config_input(config)
 
         show_contacts_window(config, rewrite, root, sk_event)
+        show_groups_window(config, rewrite, root, sk_event)
 
         start_skype(config, sk_event)
 
@@ -229,6 +229,31 @@ def show_contacts_window(config, rewrite, root, sk_event):
         root.mainloop()
 
 
+def show_groups_window(config, rewrite, root, sk_event):
+    if rewrite or not config['groups_must_be_in_call']:
+        top = tk.Toplevel(root)
+        listbox = tk.Listbox(top, selectmode=tk.MULTIPLE)
+        for name in groups.keys():
+            listbox.insert(tk.END, name)
+        listbox.pack()
+
+        def on_button_click():
+            selected_groups = listbox.curselection()
+            config['groups_must_be_in_call'] = {}
+            for i in selected_groups:
+                name = listbox.get(i)
+                user_id = groups[name]
+                config['groups_must_be_in_call'].update({name: user_id})
+
+            root.destroy()
+            start_skype(config, sk_event)
+            print('Groups selected')
+
+        button = tk.Button(top, text="Save", command=on_button_click)
+        button.pack()
+        root.mainloop()
+
+
 def connect_skype():
     credentials_path = resource_path('credentials.txt')
     token_path = resource_path('token.txt')
@@ -275,6 +300,17 @@ def get_contacts(sk):
     print('Contacts synced')
 
 
+def get_groups(sk):
+    global groups
+    groups_sync = sk.chats.recent()
+    groups = {}
+    for value in groups_sync.items():
+        if isinstance(value[1], SkypeGroupChat):
+            key = value[1].topic
+            groups[key] = value[1].id
+    print('Groups synced')
+
+
 def start_skype(config, sk_event):
     try:
         set_configs(config)
@@ -301,12 +337,12 @@ def set_configs(config):
     config_path = resource_path('config.json')
     with open(config_path, 'w', encoding='utf-8') as file:
         json.dump(config, file, ensure_ascii=False, indent=4)
-    global my_name, devops_user, sobala_user, call_name_list, users_must_be_in_call
+    global my_name, devops_user, call_name_list, users_must_be_in_call, groups_must_be_in_call
     my_name = config['my_name']
     devops_user = config['devops_user']
-    sobala_user = config['sobala_user']
     call_name_list = config['call_name_list']
     users_must_be_in_call = config['users_must_be_in_call']
+    groups_must_be_in_call = config['groups_must_be_in_call']
 
     print('word that must be in call:')
     for word in call_name_list:
@@ -315,6 +351,11 @@ def set_configs(config):
     print('user that must be in call:')
     for name, user_id in users_must_be_in_call.items():
         print(f'- {name}: {user_id}')
+
+    print('groups that must be in call:')
+    for name, user_id in groups_must_be_in_call.items():
+        print(f'- {name}: {user_id}')
+
     print('Configs set')
 
 
