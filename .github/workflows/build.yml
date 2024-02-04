@@ -18,10 +18,16 @@ jobs:
       with:
         python-version: 3.8
 
+    - name: Create token.txt, credentials.txt and config.json from sample files
+      run: |
+        cp token.txt.sample token.txt
+        cp credentials.txt.sample credentials.txt
+        cp config.json.sample config.json
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pyinstaller
+        pip install -r requirements.txt
 
     - name: Build application
       run: pyinstaller main.spec
