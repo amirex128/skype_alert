@@ -54,36 +54,44 @@ class MySkype(SkypeEventLoop):
             self.start_skype_thread()
 
     def check_connection(self):
+        before_disconnected = False
         while True:
             print("Checking connection...")
             try:
                 response = requests.get('https://www.skype.com')
-                response.raise_for_status()  # Raises a HTTPError if the status is 4xx, 5xx
-
+                response.raise_for_status()
                 print("Connection is okay.")
+                if before_disconnected:
+                    before_disconnected = False
+                    print("Connection is okay after reconnect.")
+                    if self.skype_thread is not None:
+                        self.stop_event.set()
+                    self.stop_event = threading.Event()
+                    self.skype_thread = threading.Thread(target=self.start_skype_thread)
+                    self.skype_thread.start()
             except (requests.ConnectionError, requests.HTTPError):
+                before_disconnected = True
                 print("Connection lost. Reconnecting...")
                 self.conn.readToken()
                 if self.conn.connected:
                     try:
                         response = requests.get('https://www.skype.com')
-                        response.raise_for_status()  # Raises a HTTPError if the status is 4xx, 5xx
-
-                        print("Connection is okay.")
+                        response.raise_for_status()
+                        print("Connection is okay after reconnect.")
                     except (requests.ConnectionError, requests.HTTPError):
                         print("Reconnection failed.")
+                        time.sleep(10)
+                        self.skype_thread = None
                         continue
                     print("Reconnected. Restarting event loop...")
-                    # Stop the old thread
                     if self.skype_thread is not None:
                         self.stop_event.set()
-                    # Start a new thread
                     self.stop_event = threading.Event()
                     self.skype_thread = threading.Thread(target=self.start_skype_thread)
                     self.skype_thread.start()
                 else:
                     print("Reconnection failed.")
-            time.sleep(60)  # wait for 1 minute
+            time.sleep(30)
 
     def onEvent(self, event):
         if is_stop:
