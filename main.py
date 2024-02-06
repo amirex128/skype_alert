@@ -108,6 +108,7 @@ class MySkype(SkypeEventLoop):
 
             if isinstance(event, SkypeMessageEvent):
                 if hasattr(event.msg, 'plain'):
+
                     if my_name in event.msg.plain:
                         self.show_message('شما صدا زده شده اید')
 
@@ -121,7 +122,7 @@ class MySkype(SkypeEventLoop):
                                 self.show_message(f'{name}در مورد شما در این گروه صحبت شده است', sound=False)
 
                     if devops_user == event.msg.chatId:
-                        if '@Masood' in event.msg.plain:
+                        if 'Masood' in event.msg.plain:
                             self.show_message('مسعود داخل گروه دو آپس صدا زده شده است')
 
 
@@ -177,7 +178,7 @@ def set_username(sk):
     config_path = resource_path('config.json')
     with open(config_path, 'r') as file:
         config = json.load(file)
-    config['my_name'] = '@' + sk.skype.user.name.first + ' ' + sk.skype.user.name.last
+    config['my_name'] = sk.skype.user.name.first + ' ' + sk.skype.user.name.last
     print('set my name: ' + config['my_name'])
     return config
 

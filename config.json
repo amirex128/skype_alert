@@ -1,10 +1,15 @@
 {
     "my_name": "@Amir Shirdel - Search & Discovery",
     "users_must_be_in_call": {
-        "Abolfazl Sadri": "live:abolfazl.sadri69"
+        "Abolfazl Sadri": "live:abolfazl.sadri69",
+        "Erfan Rezvani": "live:erfan.re79",
+        "Masood Hamzehkhany": "live:.cid.1f14d85cc112d076",
+        "Reza Rostamian": "live:.cid.d332c152c53ad456",
+        "Reza Rostamian 5": "live:d9e477ec3f8865fb"
     },
     "groups_must_be_in_call": {
-        "سوبالا": "19:a12cbe66dd104756b641dcafb86c774f@thread.skype"
+        "سوبالا": "19:a12cbe66dd104756b641dcafb86c774f@thread.skype",
+        "devops &amp; system planning": "19:84854ad599cb4fa987f46dc4103a7636@thread.skype"
     },
     "call_name_list": [
         "امير",
