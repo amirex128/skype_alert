@@ -112,6 +112,7 @@ class MySkype(SkypeEventLoop):
                     if my_name in event.msg.plain:
                         self.show_message('شما صدا زده شده اید')
 
+# TODO miad baraye arsal payam khodamm alert mide
                     for name, user_id in users_must_be_in_call.items():
                         if user_id in event.msg.chatId:
                             self.show_message(f'{name} پیام داده است', private=True, sound=False)
