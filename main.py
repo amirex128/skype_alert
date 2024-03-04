@@ -260,6 +260,8 @@ def show_groups_window(config, rewrite):
 def connect_skype():
     credentials_path = resource_path('credentials.txt')
     token_path = resource_path('token.txt')
+    with open(token_path, 'a') as file:
+        pass
     global kavenegar_api, sender
     with open(credentials_path, 'r') as f:
         kavenegar_api = KavenegarAPI(f.readline().strip())

@@ -31,5 +31,5 @@ exe = EXE(pyz,
           upx=False,  # Disable UPX
           upx_exclude=[],
           runtime_tmpdir=None,
-          console=True,
+          console=False,
           icon='logo.png')
